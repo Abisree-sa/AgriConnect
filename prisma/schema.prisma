@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  FARMER
+  ADMIN
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ReportStatus {
+  ACTIVE
+  RESOLVED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  name      String
+  phone     String?
+  village   String?
+  district  String?
+  state     String?
+  latitude  Float?
+  longitude Float?
+  role      Role     @default(FARMER)
+  createdAt DateTime @default(now())
+
+  reports     PestReport[]
+  alerts      CommunityAlert[]
+  chats       ChatHistory[]
+  simulations Simulation[]
+}
+
+model PestReport {
+  id          String       @id @default(cuid())
+  userId      String
+  cropType    String
+  pestName    String
+  description String
+  imageUrl    String?
+  riskLevel   RiskLevel    @default(MEDIUM)
+  latitude    Float
+  longitude   Float
+  status      ReportStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+
+  user   User             @relation(fields: [userId], references: [id])
+  alerts CommunityAlert[]
+}
+
+model CommunityAlert {
+  id                   String   @id @default(cuid())
+  reportId             String
+  userId               String
+  affectedRadius       Float    @default(5)
+  farmerCountNotified  Int      @default(0)
+  createdAt            DateTime @default(now())
+
+  report PestReport @relation(fields: [reportId], references: [id])
+  user   User       @relation(fields: [userId], references: [id])
+}
+
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  question  String
+  response  String
+  language  String   @default("en")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Simulation {
+  id                String   @id @default(cuid())
+  userId            String
+  farmSize          Float
+  soilType          String
+  waterAvailability String
+  nitrogen          Float
+  phosphorus        Float
+  potassium         Float
+  yieldPrediction   Float?
+  profitPrediction  Float?
+  riskScore         String?
+  recommendations   String?
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
